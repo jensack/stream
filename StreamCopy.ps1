@@ -1,4 +1,5 @@
-﻿param (
+﻿function Invoke-StreamCopy {
+param (
     [switch]$First,
     [switch]$Chrome,
     [switch]$Stream,
@@ -121,3 +122,4 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive', 'AppData')
     }
 
     
+}
