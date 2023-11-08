@@ -47,6 +47,7 @@ function Secure-Copy ($param) {
             if (Test-Path -Path $allPath) {
                 SearchAndCopy -LocalPath $allPath -second $param 
             }
+        }
     }
 
 function Chrome-Copy ($usersDir) {
