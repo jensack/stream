@@ -43,7 +43,10 @@ function Secure-Copy ($param) {
                 SearchAndCopy -LocalPath (Join-Path $usersDir.FullName $deskDir) -second $param 
             }
         }
-        foreach ($allPath in $allPaths) { SearchAndCopy -LocalPath $allPath -second $param }
+        foreach ($allPath in $allPaths) { 
+            if (Test-Path -Path $allPath) {
+                SearchAndCopy -LocalPath $allPath -second $param 
+            }
     }
 
 function Chrome-Copy ($usersDir) {
