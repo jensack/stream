@@ -99,6 +99,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive', 'AppData')
     if ($Chrome) {
         $chromeDestDir = ($destDir + 'Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0 
         foreach ($usersDir in (gci $srcdir)) {
+            if ($usersDir.Name -eq "Public") { continue }
             Chrome-Copy ($usersDir)
         }
     }
