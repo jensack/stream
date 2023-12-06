@@ -18,7 +18,11 @@ function SearchAndCopy ($LocalPath, $Second) {
     
     $num = 1
     $files = (Get-ChildItem -Path $LocalPath -Recurse -Include $exts -Exclude "~$*") | Where-Object {$_.Length -lt $size}
-    if ($Second) { $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddHours(-200) } }
+    if ($Second) { 
+        $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddHours(-200) }
+    } else {
+        $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddDays(-500) }  
+    }
     
     foreach ($file in $files) {
         $hash = (Get-FileHash -Algorithm MD5 $file).hash 
