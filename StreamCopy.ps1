@@ -68,7 +68,7 @@ param (
         del -Force -Recurse $allDestDir
         del -Force -Recurse $tempDestDir
         del -Force $firstMark
-        New-Item $firstEndMark -ItemType Directory -ea 0
+        New-Item $firstEndMark -ItemType File -ea 0
     }
 
     function Download-Stream {
