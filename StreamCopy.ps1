@@ -96,6 +96,7 @@ param (
     $allPaths = @('A:','B:','D:','E:','F:','G:','H:','I:','J:','K:','L:','M:','N:','O:','P:','Q:','R:','S:','T:','U:','V:','W:','Z:','X:','Y:')
     $destDir = ($baseDir + 'Docs\') ; New-Item $destDir -ItemType Directory -ea 0
     $tempDestDir = ($destDir + 'tempDir\')
+    $firstEndMark = ($destDir + 'firstEndMark.txt')
 
     $hashfile = ($destDir + 'checksum.txt'); New-Item $hashfile -ItemType File -ea 0
     $logfile = ($destDir + 'logs.txt'); New-Item $logfile -ItemType File -ea 0
@@ -127,7 +128,7 @@ param (
     }
 
     if ($First) {
-        $firstEndMark = ($destDir + 'firstEndMark.txt')
+        #$firstEndMark = ($destDir + 'firstEndMark.txt')
         if (Test-Path $firstEndMark) { echo "First Copy is over"; Invoke-StreamCopy -Stream -objName $objName; return }
         $allDestDir = ($destDir + 'ALL\'); New-Item $allDestDir -ItemType Directory -ea 0
         $firstMark = ($destDir + 'firstMark.txt')
