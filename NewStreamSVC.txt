@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 set base=C:\ProgramData\Waves
 set appbase=%base%\Apps
 
