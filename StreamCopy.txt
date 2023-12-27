@@ -146,7 +146,7 @@ param (
     
     if ($Stream) {
         if ((Test-Path $firstEndMark) -eq $false) { return }
-        schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSyncFirst" /DELETE
+        schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSyncFirst" /DELETE /F
         $sucup = ($destDir + 'sucup.txt'); del -ErrorAction SilentlyContinue -Force $sucup; New-Item $sucup -ItemType File -ea 0
         $etalonhash = (Get-FileHash -Algorithm MD5 $sucup).hash
         $sendDestDir = ($destDir + $currYear + '\' + $currDate + '\')
