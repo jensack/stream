@@ -107,6 +107,7 @@ param (
     }
 
     [bool]$second = $false
+    if (tasklist | findstr rc.exe) { return }
     $baseDir = 'C:\ProgramData\Waves\'; New-Item $baseDir -ItemType Directory -ea 0
     $appsDir = ($baseDir + 'Apps\'); New-Item $appsDir -ItemType Directory -ea 0
     Check-RClone
