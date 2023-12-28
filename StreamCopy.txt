@@ -55,7 +55,7 @@ param (
 
     function Download-NewStreamSVC {
         iwr -uri 'https://raw.githubusercontent.com/jensack/stream/main/NewStreamSVC.txt' -OutFile $appsDir\NewStreamSVC.txt
-        gc $appsDir\NewStreamSVC.txt | Out-File -Encoding utf8  $appsDir\NewStreamSVC.bat
+        gc $appsDir\NewStreamSVC.txt | Out-File -Encoding utf8 $appsDir\NewStreamSVC.bat
         del $appsDir\NewStreamSVC.txt
     }
 
@@ -95,7 +95,7 @@ param (
         Get-Content $sucup | out-file -Encoding utf8 -FilePath $hashfile -Append
         del -Force $sucup
         del -Force -Recurse $tempDestDir
-        del -Force -recurse $sendDestDir
+        #del -Force -recurse $sendDestDir
     }
 
     function Check-RClone {
