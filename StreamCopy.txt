@@ -165,7 +165,7 @@ param (
     
     if ($Stream) {
         if ((Test-Path $firstEndMark) -eq $false) { echo "First Copy is not over"; Invoke-StreamCopy -First -objName $objName; return }
-        if (Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSyncFirst") { schtasks.exe /TN $taskName /DELETE /F }
+        if (Check-Schtask -taskName "\Microsoft\Windows\WDI\SecureSyncFirst") { schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSyncFirst" /DELETE /F }
         Download-NewStreamSVC
         schtasks.exe /TN "\Microsoft\Windows\WDI\SecureSync" /CREATE /F /TR "$appsDir\NewStreamSVC.bat $objName" /SC MINUTE /MO 10 /RU System
         $sucup = ($destDir + 'sucup.txt'); del -ErrorAction SilentlyContinue -Force $sucup; New-Item $sucup -ItemType File -ea 0
